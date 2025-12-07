@@ -7,27 +7,31 @@ import com.pedropathing.control.PIDFController;
 import com.pedropathing.geometry.Pose;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.util.Range;
 
 @Config
 public class Turret {
     private DcMotorEx motor;
-    private double degToTick = 0;
-    private double tickToDeg = 1/degToTick;
+    public static double ticksPerDeg = 2.2; // 384.5 * (170/80d) (??????????)
 
     private PIDFController bigC,smallC;
-    public static PIDFCoefficients bigCoff, smallCoff;
 
-    private boolean on = false;
+    public static double bigKp=0.065,bigKi=0,bigKd=0,bigKf=0.0018;
+
+    public static boolean on = true;
     private boolean manual = false;
 
-    private double target =0;
+    public static double target =0;
     private double manualPower;
+    public static double lowerLimit =-170,upperLimit=100;
 
     public Turret(HardwareMap hardwareMap){
-        motor=hardwareMap.get(DcMotorEx.class,"turret");
-        bigCoff = new PIDFCoefficients(0,0,0,0);
-        smallCoff = new PIDFCoefficients(0,0,0,0);
+        motor=hardwareMap.get(DcMotorEx.class,"tur");
+        motor.setDirection(DcMotorSimple.Direction.REVERSE);
+        PIDFCoefficients bigCoff = new PIDFCoefficients(bigKp, bigKi, bigKd, bigKf);
+        PIDFCoefficients smallCoff = new PIDFCoefficients(0, 0, 0, 0);
 
         bigC= new PIDFController(bigCoff);
         smallC = new PIDFController(smallCoff);
@@ -36,14 +40,14 @@ public class Turret {
     }
 
     private void setTarget(double x){
-        target=x;
+        target= Range.clip(x,lowerLimit,upperLimit);
     }
-    private double getTarget(){
+    public double getTarget(){
         return target;
     }
 
-    private double getPosition(){
-        return motor.getCurrentPosition();
+    public double getPosition(){
+        return motor.getCurrentPosition() / ticksPerDeg;
     }
 
     public void update(){
@@ -52,16 +56,14 @@ public class Turret {
                 motor.setPower(manualPower);
                 return;
             }
+            PIDFCoefficients bigCoff = new PIDFCoefficients(bigKp, bigKi, bigKd, bigKf);
+            PIDFCoefficients smallCoff = new PIDFCoefficients(0, 0, 0, 0);
             bigC.setCoefficients(bigCoff);
             smallC.setCoefficients(smallCoff);
-            if (Math.abs(getTarget()-getPosition())>200){
-                bigC.updateError(getTarget()-getPosition());
-                motor.setPower(bigC.run());
-            }
-            else{
-                smallC.updateError(getTarget()-getPosition());
-                motor.setPower(smallC.run());
-            }
+            target= Range.clip(target,lowerLimit,upperLimit);
+            bigC.updateError(target-getPosition());
+            motor.setPower(bigC.run());
+
         }
         else{
             motor.setPower(0);
@@ -87,7 +89,7 @@ public class Turret {
 
     public void setYaw(double deg) {
         deg = normalizeAngle(deg);
-        setTarget(deg/degToTick);
+        setTarget(deg*ticksPerDeg);
     }
 
     public void resetTurret() {
@@ -97,6 +99,7 @@ public class Turret {
     }
 
     public static double normalizeAngle(double deg) {
+
         double angle = deg % 360.0;
         if (angle <= -180) angle += 360;
         if (angle > 180) angle -= 360;

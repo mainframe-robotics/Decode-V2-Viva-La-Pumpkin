@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.Control.Subsystems;
 
+import com.acmerobotics.dashboard.config.Config;
 import com.pedropathing.control.PIDFCoefficients;
 import com.pedropathing.control.PIDFController;
 import com.qualcomm.hardware.rev.RevColorSensorV3;
@@ -14,6 +15,7 @@ import org.firstinspires.ftc.vision.opencv.ColorRange;
 import java.util.HashMap;
 import java.util.function.Consumer;
 
+@Config
 public class Transfer {
     private DcMotorEx spin;
     private double ticksToDeg;
@@ -25,23 +27,27 @@ public class Transfer {
     private RevColorSensorV3 slot2;
     private RevColorSensorV3 slot3;
 
-    public static double kickerUp =.1,kickerDown = .4;
+    public static double mult=1;
+
+    public static double kp=0.022,ki=0,kd=0.00049,kf=0;
+
+    public static double kickerUp =.05,kickerDown = .375;
 
     private PIDFController controller;
-    public static PIDFCoefficients spinCoff;
+    public static PIDFCoefficients spinCoff=new PIDFCoefficients(0,0,0,0);
     
     public static HashMap<String,Double> spinStates;
-    private boolean on;
-    private double targetDeg;
+    public static boolean on =true;
+    public static double targetDeg;
 
     public Transfer(HardwareMap hardwareMap){
         spin=hardwareMap.get(DcMotorEx.class,"spin");
-        kicker= hardwareMap.get(Servo.class,"kicker");
+        kicker= hardwareMap.get(Servo.class,"kick");
         slot1=hardwareMap.get(RevColorSensorV3.class,"slot1");
         slot2=hardwareMap.get(RevColorSensorV3.class,"slot2");
         slot3=hardwareMap.get(RevColorSensorV3.class,"slot3");
         
-        spinCoff=new PIDFCoefficients(0,0,0,0);
+        spinCoff=new PIDFCoefficients(kp,ki,kd,kf);
         controller= new PIDFController(spinCoff);
         spinStates = new HashMap<>();
         spinStates.put("SLOT1-COLOR",60D);
@@ -49,7 +55,7 @@ public class Transfer {
         spinStates.put("SLOT3-COLOR",180D);
 
 
-        int ticksPerMotorRev = 0;
+        double ticksPerMotorRev = 537.7;
         double gearRatio = 1.0;
         double ticksPerTurretRev = ticksPerMotorRev * gearRatio;
 
@@ -86,9 +92,10 @@ public class Transfer {
 
     public void update(){
         if (on){
+            spinCoff.setCoefficients(kp,ki,kd,kf);
             controller.setCoefficients(spinCoff);
             controller.updateError(normalizeAngleDeg(targetDeg - getPositionDeg()));
-            spin.setPower(controller.run());
+            spin.setPower(controller.run()*mult);
         }
         else{
             spin.setPower(0);

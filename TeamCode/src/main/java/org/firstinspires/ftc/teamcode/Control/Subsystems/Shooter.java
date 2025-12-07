@@ -9,6 +9,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 public class Shooter {
     private DcMotorEx motor;
     private Servo hood;
+    public static double ratio;
 
     private PIDFController b, s;
 
@@ -16,13 +17,16 @@ public class Shooter {
     public static double bp = 0.03, bd = 0.0, bf = 0.0, sp = 0.01, sd = 0.0001, sf = 0.0;
 
     public static double pSwitch = 50;
+
+    public static double close = .1,far =.8;
     private boolean activated = true;
 
 
     public Shooter(HardwareMap hardwareMap) {
         b = new PIDFController(new PIDFCoefficients(bp, 0, bd, bf));
         s = new PIDFController(new PIDFCoefficients(sp, 0, sd, sf));
-        motor = hardwareMap.get(DcMotorEx.class, "shooter");
+        motor = hardwareMap.get(DcMotorEx.class, "shoot");
+
         hood = hardwareMap.get(Servo.class,"hood");
         //r = hardwareMap.get(DcMotorEx.class, "sr");
         //r.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -65,13 +69,14 @@ public class Shooter {
         s.setCoefficients(new PIDFCoefficients(sp, 0, sd, sf));
 
         if (activated) {
-            if (Math.abs(getTarget() - getVelocity()) < pSwitch) {
-                s.updateError(getTarget() - getVelocity());
-                setPower(s.run());
-            } else {
-                b.updateError(getTarget() - getVelocity());
-                setPower(b.run());
-            }
+//            if (Math.abs(getTarget() - getVelocity()) < pSwitch) {
+//                s.updateError(getTarget() - getVelocity());
+//                setPower(s.run());
+//            } else {
+//                b.updateError(getTarget() - getVelocity());
+//                setPower(b.run());
+//            }
+            motor.setVelocity(getTarget());
         }
     }
 
@@ -82,7 +87,7 @@ public class Shooter {
 
     public void forDistance(double distance) {
         //setTarget((6.13992 * distance) + 858.51272);
-        setTarget((0.00180088*Math.pow(distance, 2))+(4.14265*distance)+948.97358);
+        setTarget(2000);
     }
 
 

@@ -6,7 +6,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 public class Intake {
     private DcMotorEx motor;
     public Intake(HardwareMap hardwareMap){
-        motor=hardwareMap.get(DcMotorEx.class,"intake");
+        motor=hardwareMap.get(DcMotorEx.class,"int");
 
     }
     public void setPower(double x){
