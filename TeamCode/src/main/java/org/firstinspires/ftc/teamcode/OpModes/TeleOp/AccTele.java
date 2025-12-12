@@ -2,9 +2,6 @@ package org.firstinspires.ftc.teamcode.OpModes.TeleOp;
 
 import android.util.Size;
 
-import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.dashboard.config.Config;
-import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.ftc.InvertedFTCCoordinates;
 import com.pedropathing.ftc.PoseConverter;
@@ -21,6 +18,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
+import org.firstinspires.ftc.teamcode.Control.Controllers.SequenceController;
 import org.firstinspires.ftc.teamcode.Control.Subsystems.Intake;
 import org.firstinspires.ftc.teamcode.Control.Subsystems.Shooter;
 import org.firstinspires.ftc.teamcode.Control.Subsystems.Transfer;
@@ -30,175 +28,132 @@ import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
+import java.util.Arrays;
 import java.util.List;
 
-@Config
 @TeleOp
-public class TestTeleOp extends LinearOpMode {
-    Follower follower;
-
-    public static double hoodAngle = Shooter.baseAngle;
-
-    public static int rpm= 600;
-
+public class AccTele extends LinearOpMode {
     private Transfer transfer;
-    private Turret turret;
     private Shooter shooter;
+    private Turret turret;
 
     private Intake intake;
-    public static Pose goalPose = new Pose(1,138);
+    private Follower follower;
 
     private ElapsedTime timer;
 
+    public static Pose goalPose = new Pose(3,142);
+    private SequenceController sequence;
 
-
+    boolean slow;
     @Override
-    public void runOpMode() throws InterruptedException {
+    public void runOpMode(){
+
         List<LynxModule> allHubs = hardwareMap.getAll(LynxModule.class);
+
         initAprilTag(hardwareMap);
-
-        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
-        // Declare our motors
-        // Make sure your ID's match your configuration
-
-        transfer = new Transfer(hardwareMap);
+        transfer= new Transfer(hardwareMap);
+        shooter=new Shooter(hardwareMap);
         turret = new Turret(hardwareMap);
-        shooter = new Shooter(hardwareMap);
         intake = new Intake(hardwareMap);
-
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(new Pose(72,72,Math.toRadians(90)));
         follower.startTeleopDrive();
         follower.update();
-        turret.automatic();
-        shooter.setHood(hoodAngle);
-        shooter.update();
-
-        // Reverse the right side motors. This may be wrong for your setup.
-        // If your robot moves backwards when commanded to go forwards,
-        // reverse the left side instead.
-        // See the note about this earlier on this page.
         timer = new ElapsedTime();
         timer.reset();
-        boolean state=false;
-
+        sequence = new SequenceController(transfer,shooter,turret,intake,follower,goalPose);
+        transfer.retract();
+        String[] GPP = {"GREEN","PURPLE","PURPLE"};
+        String[] PGP = {"PURPLE","GREEN","PURPLE"};
+        String[] PPG = {"PURPLE","PURPLE","GREEN"};
         waitForStart();
 
-        if (isStopRequested()) return;
-
-        while (opModeIsActive()) {
-            turret.on();
-            double sec = timer.seconds();
-
-
+        while (opModeIsActive()){
             for (LynxModule module : allHubs) {
                 module.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
             }
+            double sec = timer.seconds();
+            if(!sequence.isBusy()){
+                if (gamepad1.dpadLeftWasPressed()){
+                    sequence.setMotifOrder(GPP);
+                } else if (gamepad1.dpadDownWasPressed()) {
+                    sequence.setMotifOrder(PGP);
+                } else if (gamepad1.dpadRightWasPressed()) {
+                    sequence.setMotifOrder(PPG);
+                }
+            }
 
-            if(gamepad1.aWasPressed()){
-                transfer.setTargetDeg(0,sec);
+            if (gamepad1.aWasPressed()){
+                sequence.start();
             }
-            if(gamepad1.xWasPressed()){
-                transfer.setTargetDeg(120,sec);
+            if (gamepad1.bWasPressed()){
+                sequence.end();
             }
-            if(gamepad1.bWasPressed()){
-                transfer.setTargetDeg(240,sec);
-            }
-
 
             if(gamepad1.yWasPressed()){
                 transfer.setTargetDeg(30,sec);
             }
-            if(gamepad1.yWasReleased()){
-                transfer.setTargetDeg(240,sec);
-            }
-
-            if(gamepad1.dpad_down){
-                transfer.score();
-            }
-            else{
-                transfer.retract();
-            }
-            if(gamepad1.rightBumperWasPressed()){
-                state=true;
-
-            }
-            if(gamepad1.leftBumperWasPressed()){
-                state=false;
-            }
-
-
-            if (state){
-                double goalDistance = Math.hypot(goalPose.getX()-follower.getPose().getX(),goalPose.getY()-follower.getPose().getY());
-                shooter.on();
-                shooter.forDistance(goalDistance);
-            }else{
-                shooter.on();
-                shooter.setTarget(rpm);
-            }
-            turret.facePoint(goalPose,follower.getPose());
-
-//            shooter.setHood(hoodAngle);
-//            turret.facePoint(goalPose,follower.getPose());
-
-            intake.setPower(gamepad1.right_trigger-gamepad1.left_trigger);
-//
-
-            if (gamepad1.back){
-                transfer.scan(sec);
-            }
-
-            if (gamepad1.dpadRightWasPressed()){
-                transfer.scan(sec);
-                transfer.setTargetDeg(transfer.spinTo("PURPLE",sec,false),sec);
-            }
-            if (gamepad1.dpadLeftWasPressed()){
-                transfer.scan(sec);
-                transfer.setTargetDeg(transfer.spinTo("GREEN",sec,false),sec);
-            }
 
 
 
 
+//            transfer.update(sec);
             shooter.update();
             turret.update();
-            transfer.update(sec);
+            if(gamepad1.leftBumperWasPressed()) {
+                slow=false;
+            }
+            else if(gamepad1.rightBumperWasPressed()){
+                slow=true;
+            }
 
-
-
-            follower.setTeleOpDrive(
-                    -gamepad1.left_stick_y ,
-                   -gamepad1.left_stick_x ,
-                    -gamepad1.right_stick_x , true);
+            if(slow){
+                follower.setTeleOpDrive(
+                        -gamepad1.left_stick_y*.5,
+                        -gamepad1.left_stick_x*.8,
+                        -gamepad1.right_stick_x*.5, true);
+            }
+            else {
+                follower.setTeleOpDrive(
+                        -gamepad1.left_stick_y,
+                        -gamepad1.left_stick_x,
+                        -gamepad1.right_stick_x, true);
+            }
 
 
             if(gamepad1.guide) {
                 setRobotPoseFromCamera();
             }
             follower.update();
-
-            telemetry.addData("turret target", turret.getTarget());
-            telemetry.addData("turret pos",turret.getPosition());
-            telemetry.addData("turret pow",turret.getPower());
-            telemetry.addLine(transfer.getMapString());
-            telemetry.addLine(transfer.getArrString());
-            telemetry.addData("shooter target",shooter.getTarget());
-            telemetry.addData("shooter current",shooter.getVelocity());
-            telemetry.addData("shooter hood",shooter.getHood());
-            telemetry.addData("turret pow",turret.getPower());
-            telemetry.addData("spin curent",transfer.getPositionDeg());
-            telemetry.addData("spin target",transfer.getTargetDeg());
-
-
+            transfer.update(sec);
+            sequence.update(sec,follower);
+            intake.setPower(gamepad1.right_trigger-gamepad1.left_trigger);
+            telemetry.addData("shooting state: ",sequence.getShootingState());
             telemetry.addData("follower pose x:",follower.getPose().getX());
             telemetry.addData("follower pose y:",follower.getPose().getY());
             telemetry.addData("follower pose h:",Math.toDegrees(follower.getPose().getHeading()));
             telemetry.addData("follower dist to goal:", Math.hypot(goalPose.getX()-follower.getPose().getX(),goalPose.getY()-follower.getPose().getY()));
+            telemetry.addLine(transfer.getArrString());
+            telemetry.addLine(transfer.getMapString());
 
+            telemetry.addLine(Arrays.toString(sequence.getMotifOrder()));
+            telemetry.addData("spin curent",transfer.getPositionDeg());
+            telemetry.addData("spin target",transfer.getTargetDeg());
+            telemetry.addData("shooter target",shooter.getTarget());
+            telemetry.addData("shooter current",shooter.getVelocity());
+
+            telemetry.addData("turret target", turret.getTarget());
+            telemetry.addData("turret pos",turret.getPosition());
+
+
+            telemetry.addData("turret atTarget", turret.atTarget());
+            telemetry.addData("shooter atTarget",shooter.atTarget());
+            telemetry.addData("spin atTarget",transfer.atTarget());
+            telemetry.addData("spin error",transfer.error());
             telemetry.update();
         }
     }
-
     private Position cameraPosition = new Position(DistanceUnit.INCH, -.25, 4.776, 10.35, 0);
     private YawPitchRollAngles cameraOrientation = new YawPitchRollAngles(AngleUnit.DEGREES,
             0, -65, 180, 0);

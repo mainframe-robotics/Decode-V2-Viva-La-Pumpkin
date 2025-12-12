@@ -18,7 +18,8 @@ public class Turret {
 
     private PIDFController bigC,smallC;
 
-    public static double bigKp=0.065,bigKi=0,bigKd=0,bigKf=0.0018;
+    public static double bigKp=.013,bigKi=0,bigKd=0.0009,bigKf=0,smallKp=0.036;
+
 
     public static boolean on = true;
     private boolean manual = false;
@@ -26,6 +27,10 @@ public class Turret {
     public static double target =0;
     private double manualPower;
     public static double lowerLimit =-170,upperLimit=100;
+
+    private double prevMotor;
+
+
 
     public Turret(HardwareMap hardwareMap){
         motor=hardwareMap.get(DcMotorEx.class,"tur");
@@ -50,6 +55,14 @@ public class Turret {
         return motor.getCurrentPosition() / ticksPerDeg;
     }
 
+    public double getNormalixedPos(){ return normalizeAngle(getPosition());}
+
+    public double getPower(){return motor.getPower();}
+
+    public boolean atTarget(){
+        return Math.abs(getTarget()-getPosition())<2;
+    }
+
     public void update(){
         if (on){
             if (manual){
@@ -62,7 +75,16 @@ public class Turret {
             smallC.setCoefficients(smallCoff);
             target= Range.clip(target,lowerLimit,upperLimit);
             bigC.updateError(target-getPosition());
-            motor.setPower(bigC.run());
+
+            double powr = bigC.run();
+            if(Math.abs(bigC.getError())<10){
+                powr=bigC.getError()*smallKp;
+            }
+
+//            if(Math.abs(powr-prevMotor)>.05){
+                motor.setPower(powr);
+//                prevMotor=(powr);
+//            }
 
         }
         else{
@@ -89,7 +111,7 @@ public class Turret {
 
     public void setYaw(double deg) {
         deg = normalizeAngle(deg);
-        setTarget(deg*ticksPerDeg);
+        setTarget(deg);
     }
 
     public void resetTurret() {
@@ -107,8 +129,11 @@ public class Turret {
     }
 
     public void facePoint(Pose targetPose, Pose robotPose) {
-        double angleToTargetFromCenter = Math.toDegrees(Math.atan2(targetPose.getY() - robotPose.getY(), targetPose.getX() - robotPose.getX()));
-        double robotAngleDiff = normalizeAngle(angleToTargetFromCenter - Math.toDegrees(robotPose.getHeading()));
+        Pose ballPose = new Pose(robotPose.getX()-Math.cos(robotPose.getHeading()), robotPose.getY()-Math.sin(robotPose.getHeading()));
+
+
+        double angleToTargetFromCenter = Math.toDegrees(Math.atan2(targetPose.getY() - ballPose.getY(), targetPose.getX() - ballPose.getX()));
+        double robotAngleDiff = normalizeAngle(Math.toDegrees(robotPose.getHeading())-angleToTargetFromCenter );
         setYaw(robotAngleDiff);
     }
 
