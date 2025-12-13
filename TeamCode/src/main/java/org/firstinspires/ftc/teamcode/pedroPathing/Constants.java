@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.pedroPathing;
 
+import com.acmerobotics.dashboard.config.Config;
 import com.pedropathing.control.PIDFCoefficients;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.follower.FollowerConstants;
@@ -13,6 +14,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
+@Config
 public class Constants {
     public static FollowerConstants followerConstants = new FollowerConstants()
             .mass(12.25)
@@ -21,9 +23,14 @@ public class Constants {
             .useSecondaryTranslationalPIDF(true)
             .useSecondaryHeadingPIDF(true)
             .useSecondaryDrivePIDF(true)
-            .translationalPIDFCoefficients(new PIDFCoefficients(0,0,0,0.3))
-            .secondaryTranslationalPIDFCoefficients(new PIDFCoefficients(0,0,0,0))
-            ;
+            .translationalPIDFCoefficients(PedroDashTuning.translational)
+            .secondaryTranslationalPIDFCoefficients(PedroDashTuning.secondaryTranslational)
+            .headingPIDFCoefficients(PedroDashTuning.heading)
+            .secondaryHeadingPIDFCoefficients(PedroDashTuning.secondaryHeading)
+            .drivePIDFCoefficients(PedroDashTuning.drive)
+            .secondaryDrivePIDFCoefficients(PedroDashTuning.secondaryDrive)
+            .holdPointHeadingScaling(0.6)
+            .holdPointTranslationalScaling(1);
 
 
     public static MecanumConstants driveConstants = new MecanumConstants()
@@ -48,7 +55,7 @@ public class Constants {
             .strafeEncoderDirection(GoBildaPinpointDriver.EncoderDirection.FORWARD)
             .strafePodX(-2.24)
             .forwardPodY(6.752);
-    public static PathConstraints pathConstraints = new PathConstraints(0.99, 100, 1, 1);
+    public static PathConstraints pathConstraints = new PathConstraints(0.95, 0.1, 0.1, 0.011, 50, 1, 10, 1);
 
     public static Follower createFollower(HardwareMap hardwareMap) {
         return new FollowerBuilder(followerConstants, hardwareMap)
