@@ -44,7 +44,7 @@ public class Transfer {
 
     private ElapsedTime timer;
 
-    public static double vMax=4000, aMax =3250;
+    public static double vMax=3400, aMax =3000;
 
 
 

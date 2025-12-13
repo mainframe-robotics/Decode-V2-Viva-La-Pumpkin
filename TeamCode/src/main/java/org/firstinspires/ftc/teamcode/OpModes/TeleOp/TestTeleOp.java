@@ -115,30 +115,23 @@ public class TestTeleOp extends LinearOpMode {
                 transfer.setTargetDeg(240,sec);
             }
 //
-            if(gamepad1.dpad_left&&state1==-1){
+            if(gamepad1.dpad_down){
                 transfer.score();
             }
-            else if (state1==-1){
+            else{
                 transfer.retract();
             }
 
-            if(gamepad1.dpadUpWasPressed()&&!state){
-                state1=0;
-                inputCounter=0;
-
-                state=true;
-            }
-            if(gamepad1.dpadDownWasPressed()&&state){
-                state1=-1;
+            if(gamepad1.leftBumperWasPressed()){
                 state=false;
             }
-            if(state1!=-1){
-                intake.setPower(.45);
+            if(gamepad1.rightBumperWasPressed()){
+                state=true;
             }
-            else {
+
                 intake.setPower(gamepad1.right_trigger-gamepad1.left_trigger);
 
-            }
+
 
 
             if (state){
@@ -149,11 +142,10 @@ public class TestTeleOp extends LinearOpMode {
                 shooter.on();
                 shooter.setTarget(rpm);
             }
-            scoreBall(sec);
 
             turret.facePoint(goalPose,follower.getPose());
 
-            shooter.setHood(hoodAngle);
+//            shooter.setHood(hoodAngle);
 //            turret.facePoint(goalPose,follower.getPose());
 
 //
@@ -162,14 +154,14 @@ public class TestTeleOp extends LinearOpMode {
                 transfer.scan(sec);
             }
 
-//            if (gamepad1.dpadRightWasPressed()){
-//                transfer.scan(sec);
-//                transfer.setTargetDeg(transfer.spinTo("PURPLE",sec,false),sec);
-//            }
-//            if (gamepad1.dpadLeftWasPressed()){
-//                transfer.scan(sec);
-//                transfer.setTargetDeg(transfer.spinTo("GREEN",sec,false),sec);
-//            }
+            if (gamepad1.dpadRightWasPressed()){
+                transfer.scan(sec);
+                transfer.setTargetDeg(transfer.spinTo("PURPLE",sec,false),sec);
+            }
+            if (gamepad1.dpadLeftWasPressed()){
+                transfer.scan(sec);
+                transfer.setTargetDeg(transfer.spinTo("GREEN",sec,false),sec);
+            }
 
 
 

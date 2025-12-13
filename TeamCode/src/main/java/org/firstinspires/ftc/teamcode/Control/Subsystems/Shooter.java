@@ -26,7 +26,7 @@ public class Shooter {
     private PIDFController b, s;
 
     public static double t = 0,hoodT;
-    private final double hoodRatio= 36.0/524.0, servoRatio=1/(360.0-30);
+    private final double hoodRatio= 37.0/524.0, servoRatio=1/(360.0-30);
 
 
 
