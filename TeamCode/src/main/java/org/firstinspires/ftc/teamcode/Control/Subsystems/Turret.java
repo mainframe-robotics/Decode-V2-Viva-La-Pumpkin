@@ -26,7 +26,7 @@ public class Turret {
 
     public static double target =0;
     private double manualPower;
-    public static double lowerLimit =-170,upperLimit=100;
+    public static double lowerLimit =-170,upperLimit=90;
 
     private double prevMotor;
 

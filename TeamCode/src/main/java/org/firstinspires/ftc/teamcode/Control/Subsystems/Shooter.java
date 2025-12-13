@@ -26,7 +26,7 @@ public class Shooter {
     private PIDFController b, s;
 
     public static double t = 0,hoodT;
-    private final double hoodRatio= 36.0/524.0, servoRatio=1/(360.0-30);
+    private final double hoodRatio= 37.0/524.0, servoRatio=1/(360.0-30);
 
 
 
@@ -43,7 +43,7 @@ public class Shooter {
 
 
      */
-    public static double bp = 0.0015, bd = 0.0, bf = 0.00025, sp = 0.0, sd = 0.000, sf = 0.0;
+    public static double bp = 0.0015, bd = 0.0, bf = 0.0002, sp = 0.0, sd = 0.000, sf = 0.0;
 
     public static double pSwitch = 50;
 
@@ -105,7 +105,7 @@ public class Shooter {
     }
 
     public void setHood(double x){
-         x= Range.clip(x,65.5,78);
+         x= Range.clip(x,66,78);
         hoodT=(x-baseAngle)/hoodRatio;
     }
     public double getHood(){
@@ -135,34 +135,14 @@ public class Shooter {
 
 
     public boolean atTarget() {
-        return Math.abs((getTarget()- getVelocity())) < 50;
+        return Math.abs((getTarget()- getVelocity())) < 200;
     }
+    public static double hoodRegA=.00000766841,hoodRegB=-.00210034,hoodRegC=.206021,hoodRegD=-8.37597,hoodRegE=186.0446;
+    public static double shooterRegA=.04931159,shooterRegB=5.86183,shooterRegC=2924.77599;
 
     public void forDistance(double distance) {
-        setHood(.33*distance+52.5);
-
-        double launchAngle = getHood();
-
-        double goalDistance = distance;
-        double goalHeight = 37;
-
-        double g = 9.81;
-        double theta = Math.toRadians(launchAngle);
-        double x = goalDistance / 39.37;
-        double deltaY = (goalHeight - 10.84) / 39.37;
-
-        double launchVelocity = Math.sqrt(
-                (g * x * x) /
-                        (2 * Math.pow(Math.cos(theta), 2) * (x * Math.tan(theta) - deltaY))
-        );
-
-        double radPerSec = launchVelocity/0.0381;//radius
-
-
-        veloMult=-0.0213775*getHood()+4.01975;
-        setTarget(((60.0*radPerSec)/(2.0*Math.PI))*veloMult);
-
-
+        setHood(hoodRegA*Math.pow(distance,4)+hoodRegB*Math.pow(distance,3)+hoodRegC*Math.pow(distance,2)+hoodRegD*Math.pow(distance,1)+hoodRegE);
+        setTarget(shooterRegA*distance*distance+shooterRegB*distance+shooterRegC);
     }
 
 

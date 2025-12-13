@@ -30,6 +30,7 @@ import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Config
@@ -38,8 +39,9 @@ public class TestTeleOp extends LinearOpMode {
     Follower follower;
 
     public static double hoodAngle = Shooter.baseAngle;
+    boolean state=false;
 
-    public static int rpm= 600;
+    public static int rpm= 0;
 
     private Transfer transfer;
     private Turret turret;
@@ -56,7 +58,7 @@ public class TestTeleOp extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         List<LynxModule> allHubs = hardwareMap.getAll(LynxModule.class);
         initAprilTag(hardwareMap);
-
+        stateTimer=new ElapsedTime();
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         // Declare our motors
         // Make sure your ID's match your configuration
@@ -73,6 +75,7 @@ public class TestTeleOp extends LinearOpMode {
         turret.automatic();
         shooter.setHood(hoodAngle);
         shooter.update();
+        transfer.retract();
 
         // Reverse the right side motors. This may be wrong for your setup.
         // If your robot moves backwards when commanded to go forwards,
@@ -80,7 +83,6 @@ public class TestTeleOp extends LinearOpMode {
         // See the note about this earlier on this page.
         timer = new ElapsedTime();
         timer.reset();
-        boolean state=false;
 
         waitForStart();
 
@@ -112,20 +114,24 @@ public class TestTeleOp extends LinearOpMode {
             if(gamepad1.yWasReleased()){
                 transfer.setTargetDeg(240,sec);
             }
-
+//
             if(gamepad1.dpad_down){
                 transfer.score();
             }
             else{
                 transfer.retract();
             }
-            if(gamepad1.rightBumperWasPressed()){
-                state=true;
 
-            }
             if(gamepad1.leftBumperWasPressed()){
                 state=false;
             }
+            if(gamepad1.rightBumperWasPressed()){
+                state=true;
+            }
+
+                intake.setPower(gamepad1.right_trigger-gamepad1.left_trigger);
+
+
 
 
             if (state){
@@ -136,12 +142,12 @@ public class TestTeleOp extends LinearOpMode {
                 shooter.on();
                 shooter.setTarget(rpm);
             }
+
             turret.facePoint(goalPose,follower.getPose());
 
 //            shooter.setHood(hoodAngle);
 //            turret.facePoint(goalPose,follower.getPose());
 
-            intake.setPower(gamepad1.right_trigger-gamepad1.left_trigger);
 //
 
             if (gamepad1.back){
@@ -163,6 +169,8 @@ public class TestTeleOp extends LinearOpMode {
             shooter.update();
             turret.update();
             transfer.update(sec);
+
+
 
 
 
@@ -194,10 +202,146 @@ public class TestTeleOp extends LinearOpMode {
             telemetry.addData("follower pose y:",follower.getPose().getY());
             telemetry.addData("follower pose h:",Math.toDegrees(follower.getPose().getHeading()));
             telemetry.addData("follower dist to goal:", Math.hypot(goalPose.getX()-follower.getPose().getX(),goalPose.getY()-follower.getPose().getY()));
+            telemetry.addData("turret atTarget", turret.atTarget());
+            telemetry.addData("shooter atTarget",shooter.atTarget());
+            telemetry.addData("spin atTarget",transfer.atTarget());
 
+            telemetry.addData("state1: ", state1);
+            telemetry.addData("cycles: ", cycles);
+            telemetry.addData("input: ", inputCounter);
+            telemetry.addData("shoot order: ", Arrays.toString(motif));
+            telemetry.addData("test: ", test);
             telemetry.update();
         }
     }
+    int state1=-1;
+    int cycles=0;
+    ElapsedTime stateTimer;
+    int inputCounter=0;
+
+    String[] motif = new String[3];
+    boolean test = false;
+
+    public void scoreBall(double sec){
+
+//        transfer.spinTo(x,sec,true);
+        switch (state1){
+            case 0:
+                if(inputCounter<3){
+                    if(gamepad1.rightBumperWasPressed()){
+                        motif[inputCounter]="PURPLE";
+                        inputCounter++;
+                    } else if (gamepad1.leftBumperWasPressed()) {
+                        motif[inputCounter]="GREEN";
+                        inputCounter++;
+                    }
+                }
+                else{
+                    state1=1;
+                }
+                break;
+            case 1:
+                transfer.scan(sec);
+                cycles=transfer.getNumBalls();
+                state1=2;
+                break;
+            case 2:
+                if(cycles>0){
+                    transfer.setTargetDeg(transfer.spinTo(motif[0],sec,true),sec);
+                    stateTimer.reset();
+                    state1=10;
+                }
+                else{
+                    state1=-1;
+                }
+                break;
+            case 10:
+                if (transfer.atTarget() && shooter.atTarget() && turret.atTarget()){
+                    transfer.score();
+                    stateTimer.reset();
+//                    test=true;
+                    state1=3;
+                }
+                break;
+            case 3:
+                if (stateTimer.milliseconds()>kickDown){
+                    if(cycles>1){
+                        transfer.scan(sec);
+                        transfer.setTargetDeg(transfer.spinTo(motif[1],sec,true),sec);
+                        state1=20;
+                    }
+                    else {
+                        state1=-1;
+                    }
+                }
+                else if (stateTimer.milliseconds()>kickerStall){
+                    transfer.retract();
+                }
+                break;
+            case 20:
+                if (transfer.atTarget()&& shooter.atTarget()&& turret.atTarget()){
+                    transfer.score();
+                    stateTimer.reset();
+                    state1=4;
+                }
+                break;
+
+            case 4:
+                if (stateTimer.milliseconds()>kickDown){
+                    if(cycles>2){
+                        transfer.scan(sec);
+                        transfer.setTargetDeg(transfer.spinTo(motif[2],sec,true),sec);
+                        state1=5;
+                    }
+                    else {
+                        state1=-1;
+                    }
+                }
+                else if (stateTimer.milliseconds()>kickerStall){
+                    transfer.retract();
+                }
+                break;
+            case 5:
+                if (transfer.atTarget()&& shooter.atTarget()&& turret.atTarget()){
+                    transfer.score();
+                    stateTimer.reset();
+                    state1=6;
+                }
+                break;
+            case 6:
+                if (stateTimer.milliseconds()>kickerStall){
+                    transfer.retract();
+                    state=false;
+                    state1=-1;
+                }
+                break;
+
+
+//            case 4:
+//                if (stateTimer.milliseconds()>kickDown){
+//                    if(cycles>2){
+//                        transfer.scan(sec);
+//                        transfer.setTargetDeg(transfer.spinTo(motif[2],sec,true),sec);
+//                        if (transfer.atTarget()&& shooter.atTarget()&& turret.atTarget()){
+//                            transfer.score();
+//                            stateTimer.reset();
+//                            state1=-1;
+//                        }
+//                    }
+//                    else {
+//                        state1=-1;
+//                    }
+//                }
+//                else if (stateTimer.milliseconds()>kickerStall){
+//                    transfer.retract();
+//                }
+//                break;
+//            case 5:
+//
+
+        }
+    }
+    public static int kickerStall=700,kickDown=1300;
 
     private Position cameraPosition = new Position(DistanceUnit.INCH, -.25, 4.776, 10.35, 0);
     private YawPitchRollAngles cameraOrientation = new YawPitchRollAngles(AngleUnit.DEGREES,

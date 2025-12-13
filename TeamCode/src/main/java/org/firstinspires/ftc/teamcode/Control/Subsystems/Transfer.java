@@ -44,7 +44,7 @@ public class Transfer {
 
     private ElapsedTime timer;
 
-    public static double vMax=4000, aMax =3250;
+    public static double vMax=3400, aMax =3000;
 
 
 
@@ -100,6 +100,16 @@ public class Transfer {
         double deg = ticks * ticksToDeg;
 
         return wrap360(deg);
+    }
+
+    public int getNumBalls(){
+        int counter=0;
+        for(String i: spinStates.keySet()){
+            if(i.contains("PURPLE")||i.contains("GREEN")){
+                counter++;
+            }
+        }
+        return counter;
     }
 
 
