@@ -21,8 +21,6 @@ public class Constants {
             .useSecondaryTranslationalPIDF(false)
             .useSecondaryHeadingPIDF(false)
             .useSecondaryDrivePIDF(false)
-            .translationalPIDFCoefficients(new PIDFCoefficients(0.09, 0, 0.001, .05))
-            .headingPIDFCoefficients(new PIDFCoefficients(1.7, 0, 0.13, 0.04))
             ;
 
 
