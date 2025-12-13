@@ -37,10 +37,10 @@ public class Blue9Ball extends OpMode {
     private final Pose shoot1Pose = new Pose(55.98,87.435,Math.toRadians(90));
     private final Pose intake1Pose = new Pose(30,83.4,Math.toRadians(180));
     private final Pose intake1PoseControl = new Pose(71.5,73.4);
-    private final Pose shoot2Pose = new Pose(50,83.4,Math.toRadians(180));
+    private final Pose shoot2Pose = new Pose(55.98,87.435,Math.toRadians(180));//old x: 50, y: 83.4
     private final Pose intake2Pose = new Pose(28.42,58.29,Math.toRadians(180));
-    private final Pose intake2PoseControl = new Pose(58,54);
-    private final Pose shoot3Pose = new Pose(70,74,Math.toRadians(180));
+    private final Pose intake2PoseControl = new Pose(50,60);
+    private final Pose shoot3Pose = new Pose(55.98,87.435,Math.toRadians(180));// old x: 70, y: 74
     private final Pose leavePose = new Pose(45.4,66.7,Math.toRadians(180));
 
     private int pathState;
@@ -90,6 +90,7 @@ public class Blue9Ball extends OpMode {
     public void autonomousPathUpdate() {
         switch (pathState) {
             case 0:
+                intake.setPower(1);
                 follower.followPath(scorePreload);
                 setPathState(1);
                 break;
@@ -116,7 +117,6 @@ public class Blue9Ball extends OpMode {
                                     .build(),
                             true
                     );
-
                     setPathState(20);
                 }
                 break;
@@ -137,29 +137,39 @@ public class Blue9Ball extends OpMode {
                 if(!follower.isBusy()&&pathTimer.getElapsedTimeSeconds() > 1) {
                     /* Grab Sample */
                     transfer.setTargetDeg(30,opmodeTimer.getElapsedTimeSeconds());
-                    intake.setPower(1);
                     /* Since this is a pathChain, we can have Pedro hold the end point while we are scoring the sample */
                     follower.followPath(intakeSet1,true);
                     setPathState(3);
+                }
+                break;
+            case 23:
+                if(!follower.isBusy()){
+                    state1=1;
+                    setPathState(24);
+                }
+
+                break;
+            case 24:
+                if(state1==-1){
+                    setPathState(4);
                 }
                 break;
             case 3:
                 /* This case checks the robot's position and will wait until the robot position is close (1 inch away) from the scorePose's position */
                 if(!follower.isBusy() &&pathTimer.getElapsedTimeSeconds() > 2) {
                     /* Score Sample */
-                    intake.setPower(0);
                     transfer.setTargetDeg(240,opmodeTimer.getElapsedTimeSeconds());
 
                     /* Since this is a pathChain, we can have Pedro hold the end point while we are grabbing the sample */
                     follower.followPath(scoreSet1,true);
-                    setPathState(-4);
+
+                    setPathState(23);
                 }
                 break;
             case 4:
                 /* This case checks the robot's position and will wait until the robot position is close (1 inch away) from the pickup2Pose's position */
                 if(!follower.isBusy()&&pathTimer.getElapsedTimeSeconds() > 1) {
                     /* Grab Sample */
-
                     /* Since this is a pathChain, we can have Pedro hold the end point while we are scoring the sample */
                     follower.followPath(intakeSet2,true);
                     setPathState(5);
@@ -169,9 +179,21 @@ public class Blue9Ball extends OpMode {
                 /* This case checks the robot's position and will wait until the robot position is close (1 inch away) from the scorePose's position */
                 if(!follower.isBusy()&&pathTimer.getElapsedTimeSeconds() > 1) {
                     /* Score Sample */
-
+                    transfer.setTargetDeg(240, opmodeTimer.getElapsedTimeSeconds());
                     /* Since this is a pathChain, we can have Pedro hold the end point while we are grabbing the sample */
                     follower.followPath(scoreSet2,true);
+                    setPathState(25);
+                }
+                break;
+            case 25:
+                if(!follower.isBusy()){
+                    state1=1;
+                    setPathState(26);
+                }
+
+                break;
+            case 26:
+                if(state1==-1){
                     setPathState(6);
                 }
                 break;
@@ -262,6 +284,7 @@ public class Blue9Ball extends OpMode {
                 }
                 break;
             case 1:
+                intake.setPower(-1);
                 transfer.scan(sec);
                 cycles=transfer.getNumBalls();
                 state1=2;
@@ -282,6 +305,7 @@ public class Blue9Ball extends OpMode {
                     stateTimer.reset();
 //                    test=true;
                     state1=3;
+                    intake.setPower(1);
                 }
                 break;
             case 3:
