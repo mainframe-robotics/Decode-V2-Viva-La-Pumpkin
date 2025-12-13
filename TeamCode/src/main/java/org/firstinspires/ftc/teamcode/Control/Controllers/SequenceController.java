@@ -101,6 +101,7 @@ public class SequenceController {
                 break;
             case 2:
                 if (timer.getElapsedTime(TimeUnit.MILLISECONDS)>1800){
+                    transfer.scan(sec);
                     transfer.spinTo(motifOrder[1],sec,true);
                     timer.resetTimer();
                     shootingState=3;
@@ -124,6 +125,7 @@ public class SequenceController {
                 break;
             case 4:
                 if (timer.getElapsedTime(TimeUnit.MILLISECONDS)>1800){
+                    transfer.scan(sec);
                     transfer.spinTo(motifOrder[2],sec,true);
                     shootingState=5;
                 } else if (timer.getElapsedTime(TimeUnit.MILLISECONDS)>700) {

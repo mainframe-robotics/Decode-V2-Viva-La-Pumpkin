@@ -102,6 +102,16 @@ public class Transfer {
         return wrap360(deg);
     }
 
+    public int getNumBalls(){
+        int counter=0;
+        for(String i: spinStates.keySet()){
+            if(i.contains("PURPLE")||i.contains("GREEN")){
+                counter++;
+            }
+        }
+        return counter;
+    }
+
 
 
 

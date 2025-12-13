@@ -43,7 +43,7 @@ public class Shooter {
 
 
      */
-    public static double bp = 0.0015, bd = 0.0, bf = 0.00025, sp = 0.0, sd = 0.000, sf = 0.0;
+    public static double bp = 0.0015, bd = 0.0, bf = 0.0002, sp = 0.0, sd = 0.000, sf = 0.0;
 
     public static double pSwitch = 50;
 
@@ -135,7 +135,7 @@ public class Shooter {
 
 
     public boolean atTarget() {
-        return Math.abs((getTarget()- getVelocity())) < 50;
+        return Math.abs((getTarget()- getVelocity())) < 200;
     }
 
     public void forDistance(double distance) {
